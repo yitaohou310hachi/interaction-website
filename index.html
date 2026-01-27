@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手势轨迹文字动画</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1 class="page-title">手势轨迹文字动画</h1>
+    <button type="button" class="header-icon" id="taoIcon" aria-label="功能建设中">
+        <img src="images/tao.png" alt="">
+    </button>
+    
+    <div class="container">
+        <div class="left-panel">
+            <div class="control-section">
+                <div class="control-section-header">
+                    <h3>素材上传</h3>
+                </div>
+                <div class="control-section-content">
+                    <div class="input-group">
+                        <label for="textInput">输入文案</label>
+                        <input type="text" id="textInput" maxlength="15" placeholder="建议不超过15字">
+                    </div>
+                    <div class="background-mode-group">
+                        <label>背景模式：</label>
+                        <div class="mode-options">
+                            <label class="mode-option">
+                                <input type="radio" name="backgroundMode" value="camera" checked>
+                                <span>摄像头</span>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="backgroundMode" value="image">
+                                <span>上传图片</span>
+                            </label>
+                        </div>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                        <button id="uploadBtn" class="btn-upload" style="display: none;">选择图片</button>
+                    </div>
+                    <button id="actionBtn" class="btn-primary btn-full-width">开始</button>
+                </div>
+            </div>
+            
+            <!-- 控制面板 -->
+            <div class="control-panel" id="controlPanel">
+                <div class="control-panel-header" id="panelHeader">
+                    <h3>动画参数控制</h3>
+                </div>
+                <div class="control-panel-content" id="panelContent">
+                    <div class="control-group">
+                        <label for="animSpeed">动画速度</label>
+                        <div class="slider-container">
+                            <input type="range" id="animSpeed" min="0.1" max="3" value="1.8" step="0.1">
+                            <span class="slider-value" id="speedValue">1.8x</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group" id="durationGroup">
+                        <label for="animDuration">单次动画时长（秒）</label>
+                        <div class="slider-container">
+                            <input type="range" id="animDuration" min="1" max="10" value="3" step="0.5">
+                            <span class="slider-value" id="durationValue">3.0</span>
+                        </div>
+                        <small>仅用于"1次"模式</small>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="fontSize">字体大小</label>
+                        <div class="slider-container">
+                            <input type="range" id="fontSize" min="20" max="80" value="50" step="2">
+                            <span class="slider-value" id="fontSizeValue">50</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group color-group">
+                        <label>颜色设置</label>
+                        <div class="color-row">
+                            <div class="color-item">
+                                <label for="textColor">文字颜色</label>
+                                <div class="color-container">
+                                    <input type="color" id="textColor" value="#667eea">
+                                    <span class="color-value" id="textColorValue">#667eea</span>
+                                </div>
+                            </div>
+                            <div class="color-item">
+                                <label for="strokeColor">描边颜色</label>
+                                <div class="color-container">
+                                    <input type="color" id="strokeColor" value="#764ba2">
+                                    <span class="color-value" id="strokeColorValue">#764ba2</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="strokeWidth">描边宽度</label>
+                        <div class="slider-container">
+                            <input type="range" id="strokeWidth" min="0" max="5" value="1" step="0.5">
+                            <span class="slider-value" id="strokeWidthValue">1.0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="repeatCount">重复次数</label>
+                        <div class="select-container">
+                            <select id="repeatCount">
+                                <option value="1" selected>1次</option>
+                                <option value="0">无限循环</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="fadeInDuration">渐显时长（秒）</label>
+                        <div class="slider-container">
+                            <input type="range" id="fadeInDuration" min="0" max="1" value="0.2" step="0.1">
+                            <span class="slider-value" id="fadeInValue">0.2</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="fadeOutDuration">渐隐时长（秒）</label>
+                        <div class="slider-container">
+                            <input type="range" id="fadeOutDuration" min="0" max="1" value="0.2" step="0.1">
+                            <span class="slider-value" id="fadeOutValue">0.2</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-actions">
+                        <button id="resetBtn" class="btn-reset">重置为默认值</button>
+                        <button id="applyBtn" class="btn-apply">应用</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="main-content">
+                <!-- 操作提示模块和摄像头预览窗口容器 -->
+                <div class="status-preview-wrapper">
+                    <!-- 操作提示模块 -->
+                    <div class="status">
+                        <div class="status-header">
+                            <h3>操作提示</h3>
+                        </div>
+                        <div class="status-content">
+                            <p id="statusText">请先输入文案，然后点击"开始"按钮激活摄像头</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 摄像头预览窗口（用于手势识别，仅在图片模式下显示） -->
+                    <div class="camera-preview-container" id="cameraPreviewContainer" style="display: none;">
+                        <div class="preview-wrapper">
+                            <video id="previewVideo" autoplay playsinline></video>
+                            <canvas id="previewCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 主展示窗口 -->
+                <div class="video-container" id="videoContainer">
+                    <img id="defaultImage" src="images/defaultimage.png" alt="占位图" style="display: block; width: 100%; height: 100%; object-fit: cover;">
+                    <video id="video" autoplay playsinline style="display: none;"></video>
+                    <img id="backgroundImage" style="display: none; width: 100%; height: auto;">
+                    <canvas id="canvas"></canvas>
+                    <svg id="textPath" xmlns="http://www.w3.org/2000/svg"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast" aria-live="polite">功能建设中</div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

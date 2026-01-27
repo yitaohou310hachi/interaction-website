@@ -1,0 +1,788 @@
+@font-face {
+    font-family: 'Uranus Pixel';
+    src: url('fonts/Uranus_Pixel_11Px.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: '造字工房乐真体';
+    src: url('fonts/造字工房乐真体.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Uranus Pixel', monospace;
+    background: url('images/background.gif') center center / cover no-repeat fixed;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* 页面标题 - 左上角 */
+.page-title {
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    font-size: 24px;
+    color: #F4F9F5;
+    margin: 0px;
+    z-index: 100;
+    font-weight: bold;
+}
+
+/* 右上角图标 - 与标题同一行，70% 展示，可点击 */
+.header-icon {
+    position: absolute;
+    top: 45px;
+    right: 60px;
+    z-index: 100;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.header-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform: scale(1.3);
+}
+
+/* Toast 提示 */
+.toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(75, 76, 91, 0.30);
+    color: #F4F9F5;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 120px auto 20px;
+    width: fit-content;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.left-panel {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
+}
+
+.right-panel {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: nowrap;
+}
+
+/* ============================================
+   模块一：素材上传模块 (control-section)
+   功能：用户输入文案、选择背景模式、上传图片、开始/清除操作
+   ============================================ */
+.control-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 3px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.control-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(43, 44, 78, 0.9);
+    color: #F4F9F5;
+}
+
+.control-section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.control-section-content {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group label {
+    font-size: 14px;
+    color: #2B2C4E;
+    white-space: nowrap;
+}
+
+.input-group input {
+    font-family: 'Uranus Pixel', monospace;
+    font-size: 14px;
+    padding: 10px 15px;
+    border: 2px solid #2B2C4E;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s;
+    flex: 1;
+    min-width: 200px;
+    color: #2B2C4E;
+}
+
+.input-group input:focus {
+    border-color: #2B2C4E;
+    box-shadow: 0 0 0 2px rgba(43, 44, 78, 0.2);
+}
+
+.input-group input::placeholder {
+    color: #2B2C4E;
+    opacity: 0.6;
+}
+
+.background-mode-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.background-mode-group label:first-child {
+    font-size: 14px;
+    color: #2B2C4E;
+    white-space: nowrap;
+}
+
+.mode-options {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.mode-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #2B2C4E;
+}
+
+.mode-option input[type="radio"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.mode-option span {
+    user-select: none;
+}
+
+.btn-upload {
+    font-family: 'Uranus Pixel', monospace;
+    font-size: 14px;
+    padding: 8px 20px;
+    border: 2px solid #2B2C4E;
+    border-radius: 8px;
+    background: white;
+    color: #2B2C4E;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-upload:hover {
+    background: #2B2C4E;
+    color: #F4F9F5;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(43, 44, 78, 0.4);
+}
+
+.input-group button {
+    font-family: 'Uranus Pixel', monospace;
+    font-size: 16px;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 120px;
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-primary {
+    background: #2B2C4E;
+    color: #F4F9F5;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background: rgba(43, 44, 78, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(43, 44, 78, 0.4);
+}
+
+.btn-full-width {
+    width: 100%;
+    margin-top: auto;
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: #2B2C4E;
+    color: #F4F9F5;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(43, 44, 78, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(43, 44, 78, 0.4);
+}
+/* ============================================
+   模块一结束：素材上传模块
+   ============================================ */
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    width: 750px;
+    max-width: 100%;
+}
+
+/* 操作提示模块和摄像头预览窗口容器 */
+.status-preview-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+/* 图片模式下：操作提示模块和摄像头预览窗口并排显示 */
+.status-preview-wrapper.image-mode {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 20px;
+}
+
+/* 摄像头预览窗口（图片模式下显示） */
+.camera-preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.preview-label {
+    font-size: 14px;
+    color: #2B2C4E;
+    font-weight: 600;
+}
+
+.preview-wrapper {
+    position: relative;
+    width: 256px;
+    height: 192px;
+    max-width: 100%;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: #000;
+    flex-shrink: 0;
+}
+
+#previewVideo {
+    width: 100%;
+    height: auto;
+    display: block;
+    transform: scaleX(-1);
+}
+
+#previewCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: scaleX(-1);
+}
+
+/* ============================================
+   模块二：摄像头视窗模块 (video-container)
+   功能：显示摄像头画面/上传的图片背景，绘制手势轨迹和文字动画
+   ============================================ */
+.video-container {
+    position: relative;
+    width: 750px;
+    max-width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: #000;
+    flex-shrink: 0;
+}
+
+#video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transform: scaleX(-1);
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#backgroundImage {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#defaultImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: scaleX(-1);
+    object-fit: cover;
+}
+
+#textPath {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* 不镜像SVG，因为路径坐标已经在代码中镜像了 */
+}
+/* ============================================
+   模块二结束：摄像头视窗模块
+   ============================================ */
+
+/* ============================================
+   模块三：操作提示模块 (status)
+   功能：显示当前操作状态和提示信息
+   ============================================ */
+.status {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 3px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 750px;
+    max-width: 100%;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 图片模式下：操作提示模块宽度自适应，高度与预览窗口一致 */
+.status-preview-wrapper.image-mode .status {
+    width: auto;
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(43, 44, 78, 0.9);
+    color: #F4F9F5;
+}
+
+.status-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.status-content {
+    padding: 15px;
+    text-align: left;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+#statusText {
+    font-size: 14px;
+    color: #2B2C4E;
+    line-height: 1.6;
+    margin: 0;
+}
+/* ============================================
+   模块三结束：操作提示模块
+   ============================================ */
+
+/* ============================================
+   模块四：动画参数控制模块 (control-panel)
+   功能：调整文字动画的各种参数（速度、时长、字体、颜色等）
+   ============================================ */
+.control-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 3px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.control-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(43, 44, 78, 0.9);
+    color: #F4F9F5;
+}
+
+.control-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.control-panel-content {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.control-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2B2C4E;
+}
+
+.control-group small {
+    display: block;
+    margin-top: 4px;
+    color: #2B2C4E;
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slider-container input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #2B2C4E;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+    background: rgba(43, 44, 78, 0.8);
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #2B2C4E;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.slider-value {
+    min-width: 50px;
+    text-align: right;
+    font-weight: 600;
+    color: #2B2C4E;
+    font-size: 13px;
+}
+
+.color-group {
+    grid-column: 1 / -1;
+}
+
+.color-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.color-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2B2C4E;
+}
+
+.color-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-container input[type="color"] {
+    width: 50px;
+    height: 40px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: none;
+    padding: 0;
+}
+
+.color-container input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-container input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+.color-value {
+    font-weight: 600;
+    color: #2B2C4E;
+    font-size: 13px;
+    font-family: monospace;
+}
+
+.select-container {
+    display: flex;
+    align-items: center;
+}
+
+.select-container select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid #2B2C4E;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2B2C4E;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2347564A' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 35px;
+}
+
+.select-container select:focus {
+    outline: none;
+    border-color: #2B2C4E;
+    box-shadow: 0 0 0 2px rgba(43, 44, 78, 0.2);
+}
+
+.control-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-reset, .btn-apply {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-reset {
+    background: rgba(255, 255, 255, 0.9);
+    color: #2B2C4E;
+    border: 2px solid #2B2C4E;
+}
+
+.btn-reset:hover {
+    background: #2B2C4E;
+    color: #F4F9F5;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(43, 44, 78, 0.4);
+}
+
+.btn-apply {
+    background: #2B2C4E;
+    color: #F4F9F5;
+    border: none;
+}
+
+.btn-apply:hover {
+    background: rgba(43, 44, 78, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(43, 44, 78, 0.4);
+}
+/* ============================================
+   模块四结束：动画参数控制模块
+   ============================================ */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .input-group input {
+        max-width: 100%;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .button-group button {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .control-panel-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .control-actions {
+        flex-direction: column;
+    }
+    
+    .btn-reset, .btn-apply {
+        width: 100%;
+    }
+}
