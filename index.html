@@ -68,8 +68,8 @@
                     <div class="control-group">
                         <label for="fontSize">字体大小</label>
                         <div class="slider-container">
-                            <input type="range" id="fontSize" min="20" max="80" value="50" step="2">
-                            <span class="slider-value" id="fontSizeValue">50</span>
+                            <input type="range" id="fontSize" min="20" max="80" value="60" step="2">
+                            <span class="slider-value" id="fontSizeValue">60</span>
                         </div>
                     </div>
                     
@@ -79,15 +79,15 @@
                             <div class="color-item">
                                 <label for="textColor">文字颜色</label>
                                 <div class="color-container">
-                                    <input type="color" id="textColor" value="#667eea">
-                                    <span class="color-value" id="textColorValue">#667eea</span>
+                                    <input type="color" id="textColor" value="#ffffff">
+                                    <span class="color-value" id="textColorValue">#ffffff</span>
                                 </div>
                             </div>
                             <div class="color-item">
                                 <label for="strokeColor">描边颜色</label>
                                 <div class="color-container">
-                                    <input type="color" id="strokeColor" value="#764ba2">
-                                    <span class="color-value" id="strokeColorValue">#764ba2</span>
+                                    <input type="color" id="strokeColor" value="#f0a90f">
+                                    <span class="color-value" id="strokeColorValue">#f0a90f</span>
                                 </div>
                             </div>
                         </div>
@@ -96,8 +96,8 @@
                     <div class="control-group">
                         <label for="strokeWidth">描边宽度</label>
                         <div class="slider-container">
-                            <input type="range" id="strokeWidth" min="0" max="5" value="1" step="0.5">
-                            <span class="slider-value" id="strokeWidthValue">1.0</span>
+                            <input type="range" id="strokeWidth" min="0" max="10" value="5" step="0.5">
+                            <span class="slider-value" id="strokeWidthValue">5.0</span>
                         </div>
                     </div>
                     
@@ -146,6 +146,7 @@
                         </div>
                         <div class="status-content">
                             <p id="statusText">请先输入文案，然后点击"开始"按钮激活摄像头</p>
+                            <img id="statusHandGif" src="images/hand.gif" alt="" class="status-hand-gif" style="display: none;">
                         </div>
                     </div>
                     

@@ -29,10 +29,10 @@ const MAX_PINCH_MISS = 5;
 let animationParams = {
     speed: 1.8,
     duration: 3.0,
-    fontSize: 50,
-    textColor: '#667eea',
-    strokeColor: '#764ba2',
-    strokeWidth: 1,
+    fontSize: 60,
+    textColor: '#ffffff',
+    strokeColor: '#f0a90f',
+    strokeWidth: 5.0,
     repeatCount: 1,
     fadeInDuration: 0.2,
     fadeOutDuration: 0.2
@@ -650,9 +650,16 @@ function drawPinchPoints(ctx, landmarks) {
     ctx.restore();
 }
 
+// 当提示包含该文案时，在操作提示模块末尾显示 hand.gif
+const STATUS_SHOW_HAND_GIF = '双指捏合开始绘制轨迹';
+
 function updateStatus(msg) {
     const el = document.getElementById('statusText');
+    const gifEl = document.getElementById('statusHandGif');
     if (el) el.textContent = msg;
+    if (gifEl) {
+        gifEl.style.display = (msg && msg.includes(STATUS_SHOW_HAND_GIF)) ? 'inline-block' : 'none';
+    }
 }
 
 // 初始化控制面板
@@ -742,10 +749,10 @@ function initControlPanel() {
         animationParams = {
             speed: 1.8,
             duration: 3.0,
-            fontSize: 50,
-            textColor: '#667eea',
-            strokeColor: '#764ba2',
-            strokeWidth: 1,
+            fontSize: 60,
+            textColor: '#ffffff',
+            strokeColor: '#f0a90f',
+            strokeWidth: 5.0,
             repeatCount: 1,
             fadeInDuration: 0.2,
             fadeOutDuration: 0.2
