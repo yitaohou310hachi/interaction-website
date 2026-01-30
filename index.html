@@ -38,6 +38,19 @@
                         <input type="file" id="imageUpload" accept="image/*" style="display: none;">
                         <button id="uploadBtn" class="btn-upload" style="display: none;">选择图片</button>
                     </div>
+                    <div class="background-mode-group">
+                        <label>文字动画模式：</label>
+                        <div class="mode-options">
+                            <label class="mode-option">
+                                <input type="radio" name="textPathMode" value="after" checked>
+                                <span>先画线后出字</span>
+                            </label>
+                            <label class="mode-option">
+                                <input type="radio" name="textPathMode" value="realtime">
+                                <span>画线即出字</span>
+                            </label>
+                        </div>
+                    </div>
                     <button id="actionBtn" class="btn-primary btn-full-width">开始</button>
                 </div>
             </div>
@@ -167,6 +180,11 @@
                     <canvas id="canvas"></canvas>
                     <svg id="textPath" xmlns="http://www.w3.org/2000/svg"></svg>
                 </div>
+            </div>
+            
+            <!-- 保存按钮：摄像头视窗模块底部居中，与各模块间距一致 -->
+            <div class="save-btn-container">
+                <button id="saveImageBtn" class="btn-save">保存图片</button>
             </div>
         </div>
     </div>

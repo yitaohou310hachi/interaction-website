@@ -61,10 +61,48 @@ body {
     transform: scale(1.3);
 }
 
+/* 保存按钮容器：摄像头视窗模块底部居中，与各模块间距一致（20px） */
+.save-btn-container {
+    text-align: center;
+    width: 100%;
+}
+
+/* 保存图片按钮 - 可在此处修改按钮样式 */
+.btn-save {
+    font-family: 'Uranus Pixel', monospace;
+    font-size: 16px;
+    padding: 12px 32px;
+    border: 2px solid #2B2C4E;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #2B2C4E;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(43, 44, 78, 0.2);
+}
+
+.btn-save:hover {
+    background: #2B2C4E;
+    color: #F4F9F5;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(43, 44, 78, 0.4);
+}
+
+.btn-save:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(43, 44, 78, 0.3);
+}
+
+.btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Toast 提示 */
 .toast {
     position: fixed;
-    bottom: 32px;
+    bottom: 100px; /* 调高避免与保存按钮重叠 */
     left: 50%;
     transform: translateX(-50%);
     background: rgba(75, 76, 91, 0.30);
@@ -84,6 +122,7 @@ body {
 
 .container {
     display: flex;
+    flex-wrap: wrap;
     gap: 20px;
     max-width: 1400px;
     margin: 120px auto 20px;
@@ -106,6 +145,8 @@ body {
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
 }
 
 .input-group {

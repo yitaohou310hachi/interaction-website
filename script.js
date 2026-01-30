@@ -22,6 +22,7 @@ let isCameraActive = false;
 let actionBtn = null;
 let backgroundMode = 'camera';
 let backgroundImage = null;
+let textPathMode = 'after';   // 'after' 先画线后出字 | 'realtime' 画线即出字
 let pinchMissCount = 0;
 const MAX_PINCH_MISS = 5;
 
@@ -112,6 +113,19 @@ function init() {
                     hands.onResults(onResults);
                 }
 
+                // 确保当前模式对应的摄像头已启动（切换选项后可能尚未就绪，导致 onFrame 不触发）
+                if (backgroundMode === 'camera') {
+                    const videoReady = video && video.readyState >= 2;
+                    if (!camera || !videoReady) {
+                        await startCameraPreview();
+                    }
+                } else {
+                    const previewReady = previewVideo && previewVideo.readyState >= 2;
+                    if (!previewCamera || !previewReady) {
+                        await startPreviewCamera();
+                    }
+                }
+
                 isCameraActive = true;
                 if (backgroundMode === 'image') {
                     updateStatus('手势识别已激活！请在左侧摄像头窗口进行手势交互，轨迹将显示在右侧图片上');
@@ -140,6 +154,11 @@ function init() {
             setTimeout(() => toastEl.classList.remove('show'), 2000);
         });
     }
+
+    const textPathModeRadios = document.querySelectorAll('input[name="textPathMode"]');
+    textPathModeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => { textPathMode = e.target.value; });
+    });
 
     function initBackgroundMode() {
         const modeRadios = document.querySelectorAll('input[name="backgroundMode"]');
@@ -266,8 +285,8 @@ function onResults(results) {
         ctx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
     }
 
-    // 若有正在渐隐的路径，在主画布上绘制
-    if (fadingPathData && fadingPathData.path && fadingPathData.path.length >= 2) {
+    // 若有正在渐隐的路径，在主画布上绘制（画线即出字模式下不展示白线）
+    if (textPathMode !== 'realtime' && fadingPathData && fadingPathData.path && fadingPathData.path.length >= 2) {
         drawPathOnCanvas(fadingPathData.path, { opacity: fadingPathData.opacity });
     }
 
@@ -303,6 +322,7 @@ function onResults(results) {
             if (!isDrawing) {
                 if (fadeIntervalId) { clearInterval(fadeIntervalId); fadeIntervalId = null; }
                 fadingPathData = null;
+                removeRealtimeTextPath();
                 isDrawing = true;
                 currentPath = [];
                 if (typeof window.updateActionButton === 'function') window.updateActionButton();
@@ -315,6 +335,9 @@ function onResults(results) {
                 Math.abs(currentPath[currentPath.length - 1].y - pt.y) > minDist) {
                 currentPath.push(pt);
                 drawCurrentPath();
+                if (textPathMode === 'realtime' && userText && currentPath.length >= 2) {
+                    updateRealtimeTextPath(currentPath);
+                }
             }
         } else {
             pinchMissCount++;
@@ -323,8 +346,15 @@ function onResults(results) {
                 pinchMissCount = 0;
                 if (currentPath.length > 0) {
                     const smoothed = smoothPath(currentPath);
-                    if (userText) generateTextPathAnimation(smoothed, userText);
-                    fadeOutPath(smoothed);
+                    if (textPathMode === 'realtime' && userText) {
+                        updateRealtimeTextPath(smoothed, true);
+                    } else {
+                        removeRealtimeTextPath();
+                        if (userText) generateTextPathAnimation(smoothed, userText);
+                        fadeOutPath(smoothed);
+                    }
+                } else {
+                    removeRealtimeTextPath();
                 }
                 currentPath = [];
                 if (typeof window.updateActionButton === 'function') window.updateActionButton();
@@ -338,8 +368,15 @@ function onResults(results) {
                 pinchMissCount = 0;
                 if (currentPath.length > 0) {
                     const smoothed = smoothPath(currentPath);
-                    if (userText) generateTextPathAnimation(smoothed, userText);
-                    fadeOutPath(smoothed);
+                    if (textPathMode === 'realtime' && userText) {
+                        updateRealtimeTextPath(smoothed, true);
+                    } else {
+                        removeRealtimeTextPath();
+                        if (userText) generateTextPathAnimation(smoothed, userText);
+                        fadeOutPath(smoothed);
+                    }
+                } else {
+                    removeRealtimeTextPath();
                 }
                 currentPath = [];
                 if (typeof window.updateActionButton === 'function') window.updateActionButton();
@@ -399,7 +436,8 @@ function drawCurrentPath() {
         else { sh = video.videoWidth / ca; sy = (video.videoHeight - sh) / 2; }
         ctx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
     }
-    if (currentPath.length > 1) drawPathOnCanvas(currentPath, { opacity: 1 });
+    // 画线即出字模式下不展示白色用户轨迹线
+    if (textPathMode !== 'realtime' && currentPath.length > 1) drawPathOnCanvas(currentPath, { opacity: 1 });
 }
 
 function smoothPath(path) {
@@ -476,25 +514,162 @@ function clearCanvas() {
     allPaths = [];
     if (fadeIntervalId) { clearInterval(fadeIntervalId); fadeIntervalId = null; }
     fadingPathData = null;
+    removeRealtimeTextPath();
     const t = svg.querySelector('text'), p = svg.querySelector('path[id^="text-path-"]');
     if (t) t.remove();
     if (p) p.remove();
 }
 
+// 根据路径走向返回用于文字展示的路径（保证文字为正、不颠倒）
+function getPathForText(path) {
+    if (path.length < 2) return path;
+    const p0 = path[0], pn = path[path.length - 1];
+    const dx = pn.x - p0.x, dy = pn.y - p0.y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+        if (dx > 0) return path.slice().reverse();
+    } else {
+        if (dy < 0) return path.slice().reverse();
+    }
+    return path;
+}
+
+function removeRealtimeTextPath() {
+    const defs = svg.querySelector('defs#realtime-defs');
+    const wrapper = svg.querySelector('g#realtime-wrapper');
+    if (defs) defs.remove();
+    if (wrapper) wrapper.remove();
+}
+
+// 在路径末尾沿方向延伸一段，使总长至少为 needLength（画布坐标）
+function extendPathForText(path, needLength) {
+    if (path.length < 2 || needLength <= 0) return path;
+    const last = path[path.length - 1], prev = path[path.length - 2];
+    const dx = last.x - prev.x, dy = last.y - prev.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return path;
+    const newPoint = { x: last.x + (dx / len) * needLength, y: last.y + (dy / len) * needLength };
+    return path.concat([newPoint]);
+}
+
+// 截取路径从起点开始、总长约 targetLength 的一段，保证文字从第一个字起完整排布
+function trimPathToLength(path, targetLength) {
+    if (path.length < 2 || targetLength <= 0) return path;
+    let len = 0;
+    for (let i = 1; i < path.length; i++) {
+        const seg = Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+        if (len + seg >= targetLength) {
+            const t = (targetLength - len) / seg;
+            const end = {
+                x: path[i - 1].x + t * (path[i].x - path[i - 1].x),
+                y: path[i - 1].y + t * (path[i].y - path[i - 1].y)
+            };
+            return path.slice(0, i).concat([end]);
+        }
+        len += seg;
+    }
+    return path;
+}
+
+function measureTextWidth(text) {
+    try {
+        const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        tmp.setAttribute('font-family', '造字工房乐真体');
+        tmp.setAttribute('font-size', animationParams.fontSize);
+        tmp.textContent = text;
+        tmp.setAttribute('visibility', 'hidden');
+        tmp.setAttribute('x', '0');
+        tmp.setAttribute('y', '0');
+        svg.appendChild(tmp);
+        const w = tmp.getBBox().width;
+        svg.removeChild(tmp);
+        return w;
+    } catch (e) {
+        return text.length * animationParams.fontSize * 0.6;
+    }
+}
+
+function updateRealtimeTextPath(path, isFinal) {
+    if (path.length < 2 || !userText) return;
+    removeRealtimeTextPath();
+    const ns = 'http://www.w3.org/2000/svg';
+    const xlink = 'http://www.w3.org/1999/xlink';
+    const textWidth = measureTextWidth(userText);
+    const pathDrawn = path.slice();
+    const pathElTemp = document.createElementNS(ns, 'path');
+    pathElTemp.setAttribute('d', pathToSVGPath(pathDrawn));
+    pathElTemp.setAttribute('fill', 'none');
+    svg.appendChild(pathElTemp);
+    const drawnLength = pathElTemp.getTotalLength();
+    svg.removeChild(pathElTemp);
+    let pathForLayout;
+    if (drawnLength >= textWidth) {
+        pathForLayout = trimPathToLength(pathDrawn, textWidth);
+    } else {
+        pathForLayout = extendPathForText(pathDrawn, textWidth - drawnLength);
+    }
+    const pathD = pathToSVGPath(pathForLayout);
+    const drawnPathD = pathToSVGPath(pathDrawn);
+
+    const cw = canvas.width, ch = canvas.height;
+    const defs = document.createElementNS(ns, 'defs');
+    defs.setAttribute('id', 'realtime-defs');
+    const mask = document.createElementNS(ns, 'mask');
+    mask.setAttribute('id', 'realtime-mask');
+    mask.setAttribute('maskUnits', 'userSpaceOnUse');
+    mask.setAttribute('maskContentUnits', 'userSpaceOnUse');
+    const maskRect = document.createElementNS(ns, 'rect');
+    maskRect.setAttribute('x', '0');
+    maskRect.setAttribute('y', '0');
+    maskRect.setAttribute('width', String(cw));
+    maskRect.setAttribute('height', String(ch));
+    maskRect.setAttribute('fill', 'black');
+    mask.appendChild(maskRect);
+    const maskPath = document.createElementNS(ns, 'path');
+    maskPath.setAttribute('d', drawnPathD);
+    maskPath.setAttribute('fill', 'none');
+    maskPath.setAttribute('stroke', 'white');
+    maskPath.setAttribute('stroke-width', String(Math.max(animationParams.fontSize * 1.2, 40)));
+    maskPath.setAttribute('stroke-linecap', 'round');
+    maskPath.setAttribute('stroke-linejoin', 'round');
+    mask.appendChild(maskPath);
+    defs.appendChild(mask);
+    svg.appendChild(defs);
+
+    const wrapper = document.createElementNS(ns, 'g');
+    wrapper.setAttribute('id', 'realtime-wrapper');
+    if (!isFinal) wrapper.setAttribute('mask', 'url(#realtime-mask)');
+
+    const pathEl = document.createElementNS(ns, 'path');
+    pathEl.setAttribute('id', 'text-path-realtime');
+    pathEl.setAttribute('d', pathD);
+    pathEl.setAttribute('fill', 'none');
+    pathEl.setAttribute('stroke', 'none');
+    wrapper.appendChild(pathEl);
+
+    const textEl = document.createElementNS(ns, 'text');
+    textEl.setAttribute('id', 'text-realtime');
+    textEl.setAttribute('font-family', '造字工房乐真体');
+    textEl.setAttribute('font-size', animationParams.fontSize);
+    textEl.setAttribute('fill', animationParams.textColor);
+    textEl.setAttribute('stroke', animationParams.strokeColor);
+    textEl.setAttribute('stroke-width', animationParams.strokeWidth);
+    textEl.setAttribute('paint-order', 'stroke fill');
+    textEl.setAttribute('dominant-baseline', 'central');
+    textEl.setAttribute('text-anchor', 'start');
+    const textPathEl = document.createElementNS(ns, 'textPath');
+    textPathEl.setAttributeNS(xlink, 'href', '#text-path-realtime');
+    textPathEl.setAttribute('startOffset', '0');
+    textPathEl.textContent = userText;
+    textEl.appendChild(textPathEl);
+    wrapper.appendChild(textEl);
+    svg.appendChild(wrapper);
+}
+
 function generateTextPathAnimation(path, text) {
     if (path.length < 2 || !text) return;
 
-    // 1. 文字顺着用户绘制方向：路径起点→终点即文字流动方向
-    // 2. 文字始终为正、不颠倒：因 pathToSVGPath 对 x 做镜像，需在会导至 SVG 中文字倒挂的走向时反转路径
-    //    仅当「以水平为主且 canvas 从左到右」或「以垂直为主且 canvas 从下到上」时反转，使 SVG 中为从左到右或从上到下
-    const p0 = path[0], pn = path[path.length - 1];
-    const dx = pn.x - p0.x, dy = pn.y - p0.y;
-    let pathToUse = path;
-    if (Math.abs(dx) >= Math.abs(dy)) {
-        if (dx > 0) pathToUse = path.slice().reverse(); // 以水平为主且左→右：镜像后 SVG 为右→左会倒挂，反转后为正
-    } else {
-        if (dy < 0) pathToUse = path.slice().reverse(); // 以垂直为主且下→上：反转成上→下为正
-    }
+    removeRealtimeTextPath();
+    const pathToUse = getPathForText(path);
 
     const t = svg.querySelector('text'), p = svg.querySelector('path[id^="text-path-"]');
     if (t) t.remove();
@@ -789,4 +964,213 @@ function initControlPanel() {
 window.addEventListener('DOMContentLoaded', () => {
     init();
     initControlPanel();
+    initSaveImage();
 });
+
+/**
+ * ============================================================
+ * 截图保存功能
+ * ============================================================
+ * 功能：截取右下角视窗区域（canvas + SVG 文字），保存为 PNG 图片
+ * 
+ * 实现方式：
+ * 1. 将主 canvas 内容绘制到临时 canvas
+ * 2. 将 SVG 序列化为图像并叠加到临时 canvas
+ * 3. 导出为 PNG 并触发浏览器下载
+ * 
+ * 无需引入第三方库，使用原生 Canvas API 实现
+ * 兼容 Chrome、Edge、Safari 等主流浏览器
+ * ============================================================
+ */
+
+// ========== 可配置参数（方便后续修改）==========
+const SCREENSHOT_CONFIG = {
+    // 下载文件名（不含扩展名）
+    fileName: '视窗_截图',
+    // 图片格式：'image/png' 或 'image/jpeg'
+    imageFormat: 'image/png',
+    // JPEG 质量（0-1，仅 format 为 jpeg 时有效）
+    imageQuality: 0.95
+};
+
+/**
+ * 初始化截图保存功能
+ * 绑定保存按钮点击事件
+ */
+function initSaveImage() {
+    const saveBtn = document.getElementById('saveImageBtn');
+    if (!saveBtn) return;
+
+    saveBtn.addEventListener('click', async () => {
+        try {
+            // 禁用按钮，防止重复点击
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            // 执行截图
+            await captureAndSaveViewport();
+
+            // 恢复按钮状态
+            saveBtn.textContent = '保存成功！';
+            setTimeout(() => {
+                saveBtn.textContent = '保存图片';
+                saveBtn.disabled = false;
+            }, 1500);
+
+        } catch (error) {
+            console.error('截图保存失败:', error);
+            saveBtn.textContent = '保存失败';
+            setTimeout(() => {
+                saveBtn.textContent = '保存图片';
+                saveBtn.disabled = false;
+            }, 1500);
+        }
+    });
+}
+
+/**
+ * 截取视窗区域并保存
+ * 将 canvas（背景+轨迹）和 SVG（文字）合成为一张图片
+ * 摄像头模式下对画面做水平翻转，使保存的图片不被镜像（与页面 CSS scaleX(-1) 抵消）
+ */
+async function captureAndSaveViewport() {
+    const sourceCanvas = document.getElementById('canvas');
+    const svgElement = document.getElementById('textPath');
+
+    if (!sourceCanvas) {
+        throw new Error('找不到 canvas 元素');
+    }
+
+    const width = sourceCanvas.width;
+    const height = sourceCanvas.height;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // 是否需要对截图做水平翻转（摄像头模式下页面用 CSS 镜像显示，保存时翻转回来）
+    const flipHorizontal = backgroundMode === 'camera';
+
+    // 步骤1：绘制主 canvas 内容
+    if (flipHorizontal) {
+        tempCtx.save();
+        tempCtx.translate(width, 0);
+        tempCtx.scale(-1, 1);
+        tempCtx.drawImage(sourceCanvas, 0, 0, width, height);
+        tempCtx.restore();
+    } else {
+        tempCtx.drawImage(sourceCanvas, 0, 0, width, height);
+    }
+
+    // 步骤2：绘制文字层（用 canvas 直接绘制，使用页面已加载字体，不翻转以与已翻转的画面对齐）
+    if (svgElement && svgElement.innerHTML.trim()) {
+        drawTextLayerFromSVG(svgElement, tempCtx, width, height);
+    }
+
+    downloadCanvas(tempCanvas, SCREENSHOT_CONFIG.fileName);
+}
+
+/**
+ * 从 SVG 读取 path 与 text，用 canvas 沿路径绘制文字（使用页面已加载字体，截图不丢字）
+ * 不翻转文字层，与已水平翻转的摄像头画面对齐
+ * @param {SVGElement} svgElement - 视窗内的 SVG 元素
+ * @param {CanvasRenderingContext2D} ctx - 目标 canvas 2D 上下文
+ * @param {number} width - 画布宽
+ * @param {number} height - 画布高
+ */
+function drawTextLayerFromSVG(svgElement, ctx, width, height) {
+    const textEl = svgElement.querySelector('text');
+    const pathEl = svgElement.querySelector('path[id^="text-path-"]');
+    if (!textEl || !pathEl) return;
+
+    const textPathEl = textEl.querySelector('textPath');
+    if (!textPathEl) return;
+
+    const pathD = pathEl.getAttribute('d');
+    const text = (textPathEl.textContent || '').trim();
+    if (!pathD || !text) return;
+
+    const fontSize = parseInt(textEl.getAttribute('font-size'), 10) || animationParams.fontSize;
+    const fontFamily = textEl.getAttribute('font-family') || '造字工房乐真体';
+    const fill = textEl.getAttribute('fill') || animationParams.textColor;
+    const stroke = textEl.getAttribute('stroke') || animationParams.strokeColor;
+    const strokeWidth = parseFloat(textEl.getAttribute('stroke-width')) || animationParams.strokeWidth;
+    const paintOrder = textEl.getAttribute('paint-order') || 'stroke fill';
+
+    ctx.save();
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+
+    const pathLen = pathEl.getTotalLength();
+    const charWidths = [];
+    for (let i = 0; i < text.length; i++) {
+        charWidths.push(ctx.measureText(text[i]).width);
+    }
+    const drawStrokeFirst = paintOrder === 'stroke fill';
+    let offset = 0;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const w = charWidths[i];
+        const pos = offset + w / 2;
+        if (pos < 0 || pos > pathLen) {
+            offset += w;
+            continue;
+        }
+        const pt = pathEl.getPointAtLength(pos);
+        const nextPos = Math.min(pos + 2, pathLen);
+        const nextPt = pathEl.getPointAtLength(nextPos);
+        let angle = Math.atan2(nextPt.y - pt.y, nextPt.x - pt.x);
+        if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
+
+        ctx.save();
+        ctx.translate(pt.x, pt.y);
+        ctx.rotate(angle);
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeWidth;
+
+        if (drawStrokeFirst) {
+            ctx.strokeText(char, 0, 0);
+            ctx.fillText(char, 0, 0);
+        } else {
+            ctx.fillText(char, 0, 0);
+            ctx.strokeText(char, 0, 0);
+        }
+        ctx.restore();
+        offset += w;
+    }
+    ctx.restore();
+}
+
+/**
+ * 将 Canvas 导出为图片并触发下载
+ * @param {HTMLCanvasElement} canvas - 要导出的 canvas 元素
+ * @param {string} fileName - 下载文件名（不含扩展名）
+ */
+function downloadCanvas(canvas, fileName) {
+    // 根据格式确定扩展名
+    const format = SCREENSHOT_CONFIG.imageFormat;
+    const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+    const fullFileName = `${fileName}.${ext}`;
+
+    // 导出为 data URL
+    let dataUrl;
+    if (format === 'image/jpeg') {
+        dataUrl = canvas.toDataURL(format, SCREENSHOT_CONFIG.imageQuality);
+    } else {
+        dataUrl = canvas.toDataURL(format);
+    }
+
+    // 创建下载链接并触发下载
+    const link = document.createElement('a');
+    link.download = fullFileName;
+    link.href = dataUrl;
+    
+    // 添加到 DOM、触发点击、然后移除
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
